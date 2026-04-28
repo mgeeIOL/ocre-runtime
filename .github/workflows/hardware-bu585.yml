@@ -48,7 +48,7 @@ jobs:
           find . -name . -o -prune -exec rm -rf -- {} +
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: ocre-runtime
           submodules: recursive
@@ -72,7 +72,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run mini sample Test Case
         run: |
@@ -102,7 +102,7 @@ jobs:
           find . -name . -o -prune -exec rm -rf -- {} +
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: ocre-runtime
           submodules: recursive
@@ -126,7 +126,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run Demo Sample Test Case
         run: |
@@ -156,7 +156,7 @@ jobs:
           find . -name . -o -prune -exec rm -rf -- {} +
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: ocre-runtime
           submodules: recursive
@@ -188,7 +188,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Supervisor ${{ matrix.test.name }} Testcase
         run: |
