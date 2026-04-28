@@ -26,71 +26,12 @@ jobs:
       - name: Remove old workflow files
         run: rm -rf /var/ocre-ci-files/*
 
-      - name: Create wasm directory
-        run: mkdir /var/ocre-ci-files/wasm
-
       - name: Reset USB Connection
         run: sudo usbreset STLINK-V3 # Product name for the b_u585i_iot02a, may have to update if we add additional STM boards to the workflow
 
-  build-wasm-files:
-    name: Build .wasm Files
-    needs: setup-local-runner
-    runs-on: zephyr-xlarge-runner
-    container:
-      image: ghcr.io/${{ github.repository }}/devcontainer-zephyr:${{ inputs.devcontainer-tag }}
-      volumes:
-        - /var/ocre-ci-files/:/var/ocre-ci-files/
-      options: --user root
-    strategy:
-      matrix:
-        sample:
-          - hello-world
-          - subscriber
-          - publisher
-          - blinky
-
-    steps:
-      - name: Cleanup workspace
-        run: |
-          rm -rf ocre-runtime || true
-          rm -rf ../.west || true
-        continue-on-error: true
-
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          path: ocre-runtime
-          submodules: recursive
-
-      - name: Build WASM sample
-        run: |
-          mkdir -p "ocre-runtime/ocre-sdk/build"
-          cd "ocre-runtime/ocre-sdk/build"
-          cmake ..
-          make ${{ matrix.sample }}
-
-      # Saving files to the runner so avoid uploading .wasm files as artifacts individually, uploaded in separate step
-      - name: Save .wasm artifact locally
-        if: always()
-        run: |
-          mkdir /var/ocre-ci-files/wasm/${{ matrix.sample }}/
-          cp "ocre-runtime/ocre-sdk/build/dist/${{ matrix.sample }}.wasm" "/var/ocre-ci-files/wasm/${{ matrix.sample }}/${{ matrix.sample }}.wasm"
-
-  artifact-wasm-files:
-    name: Artifact built .wasm Files
-    needs: build-wasm-files
-    runs-on: zephyr-xlarge-runner
-    steps:
-      - name: Artifact local wasm files
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: wasm-build-artifacts
-          path: "/var/ocre-ci-files/wasm"
-
   mini-flash:
     name: Mini sample build and flash
-    needs: artifact-wasm-files
+    needs: setup-local-runner
     runs-on: zephyr-xlarge-runner
     container:
       image: ghcr.io/${{ github.repository }}/devcontainer-zephyr:${{ inputs.devcontainer-tag }}
@@ -117,12 +58,6 @@ jobs:
           . /opt/zephyr-venv/bin/activate
           west init -l ocre-runtime
           west update
-
-      - name: Download wasm artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: wasm-build-artifacts
-          path: wasm-build-artifacts
 
       - name: Build and Flash mini sample
         run: |
@@ -150,7 +85,7 @@ jobs:
 
   demo-flash:
     name: Demo sample build and flash
-    needs: [artifact-wasm-files, mini-test]
+    needs: [setup-local-runner, mini-test]
     runs-on: zephyr-xlarge-runner
     container:
       image: ghcr.io/${{ github.repository }}/devcontainer-zephyr:${{ inputs.devcontainer-tag }}
@@ -177,12 +112,6 @@ jobs:
           . /opt/zephyr-venv/bin/activate
           west init -l ocre-runtime
           west update
-
-      - name: Download wasm artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: wasm-build-artifacts
-          path: wasm-build-artifacts
 
       - name: Build and Flash Demo Sample
         run: |
@@ -210,7 +139,7 @@ jobs:
 
   build-flash-supervisor-set-1:
     name: Build and Flash Supervisor with Image Set 1
-    needs: [artifact-wasm-files, demo-test]
+    needs: [setup-local-runner, demo-test]
     runs-on: zephyr-xlarge-runner
     container:
       image: ghcr.io/${{ github.repository }}/devcontainer-zephyr:${{ inputs.devcontainer-tag }}
@@ -237,12 +166,6 @@ jobs:
           . /opt/zephyr-venv/bin/activate
           west init -l ocre-runtime
           west update
-
-      - name: Download wasm artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: wasm-build-artifacts
-          path: wasm-build-artifacts
 
       - name: Build and Flash Supervisor
         run: |
