@@ -17,10 +17,9 @@ on:
 jobs:
   build-and-run-linux:
     name: Build and Run
-    runs-on: ["self-hosted", "build-server"]
+    runs-on: ubuntu-24.04
     container:
       image: ghcr.io/${{ github.repository }}/devcontainer-linux:${{ inputs.devcontainer-tag }}
-      options: --user 1000:1000
     steps:
       - name: Clean other workspace
         run: rm -rf ../.west
@@ -32,6 +31,9 @@ jobs:
         uses: actions/checkout@v6
         with:
           submodules: true
+
+      - name: Configure git safe directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Configure (system tests)
         run: mkdir build && cd build && cmake ../tests/system/posix
@@ -72,6 +74,7 @@ jobs:
           path: build/coverage
 
       - name: Report code coverage
+        if: github.event.pull_request.head.repo.full_name == github.repository
         uses: marocchino/sticky-pull-request-comment@v3
         with:
           GITHUB_TOKEN: ${{ secrets.TOKEN_WRITE_PR }}

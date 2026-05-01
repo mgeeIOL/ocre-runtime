@@ -17,10 +17,9 @@ on:
 jobs:
   format-checks:
     name: Formatting checks
-    runs-on: ["self-hosted", "build-server"]
+    runs-on: ubuntu-24.04
     container:
       image: ghcr.io/${{ github.repository }}/devcontainer-linux:${{ inputs.devcontainer-tag }}
-      options: --user 1000:1000
     steps:
       - name: Clean other workspace
         run: rm -rf ../.west
@@ -28,10 +27,13 @@ jobs:
       - name: Clean workspace
         run: find . -name . -o -prune -exec rm -rf -- {} +
 
-      - name: checkout
+      - name: Checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+
+      - name: Configure git safe directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Run C Format Checks
         run: sh scripts/check_c_formatting.sh
