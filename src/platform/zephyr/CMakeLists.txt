@@ -24,3 +24,6 @@ target_link_libraries(OcrePlatform
     zephyr_interface
     OcrePlatformBase
 )
+
+# Ensure generated headers are ready before compiling
+add_dependencies(OcrePlatform zephyr_generated_headers)

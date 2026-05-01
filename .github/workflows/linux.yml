@@ -21,13 +21,9 @@ on:
 jobs:
   build-and-run-linux:
     name: Build and Run
-    runs-on: ${{ matrix.run-target }}
+    runs-on: ubuntu-24.04
     container:
       image: ghcr.io/${{ github.repository }}/devcontainer-linux:${{ inputs.devcontainer-tag }}
-      options: --user 1000:1000
-    strategy:
-      matrix:
-        run-target: [["self-hosted", "build-server"], ocre-raspberrypi]
     steps:
       - name: Clean other workspace
         run: rm -rf ../.west
@@ -36,9 +32,12 @@ jobs:
         run: find . -name . -o -prune -exec rm -rf -- {} +
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: true
+
+      - name: Configure git safe directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Configure (system tests)
         run: mkdir build && cd build && cmake ../tests/system/posix
@@ -60,6 +59,30 @@ jobs:
       - name: Build and run (leak checks)
         working-directory: build
         run: make
+
+      - name: Delete build directory
+        run: rm -rf build
+
+      - name: Configure (test coverage)
+        run: mkdir build && cd build && cmake ../tests/coverage
+
+      - name: Build and run (test coverage)
+        working-directory: build
+        run: make coverage report.md
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocre-coverage
+          include-hidden-files: true
+          path: build/coverage
+
+      - name: Report code coverage
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        uses: marocchino/sticky-pull-request-comment@v3
+        with:
+          GITHUB_TOKEN: ${{ secrets.TOKEN_WRITE_PR }}
+          path: build/report.md
 
       - name: Delete build directory
         run: rm -rf build

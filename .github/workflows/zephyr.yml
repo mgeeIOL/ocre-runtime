@@ -17,10 +17,9 @@ on:
 jobs:
   build-zephyr:
     name: Build
-    runs-on: ["self-hosted", "build-server"]
+    runs-on: ubuntu-24.04
     container:
       image: ghcr.io/${{ github.repository }}/devcontainer-zephyr:${{ inputs.devcontainer-tag }}
-      options: --user 1000:1000
     strategy:
       matrix:
         board:
@@ -39,10 +38,13 @@ jobs:
         run: find . -name . -o -prune -exec rm -rf -- {} +
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: ocre-runtime
           submodules: true
+
+      - name: Configure git safe directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE/ocre-runtime"
 
       - name: West init
         run: |
@@ -80,10 +82,9 @@ jobs:
   run-zephyr:
     name: Run
     needs: build-zephyr
-    runs-on: ["self-hosted", "build-server"]
+    runs-on: ubuntu-24.04
     container:
       image: ghcr.io/${{ github.repository }}/devcontainer-zephyr:${{ inputs.devcontainer-tag }}
-      options: --user 1000:1000
     strategy:
       matrix:
         board:

@@ -56,6 +56,7 @@ message("Selected target ISA: ${TARGET_ISA}")
 set(WAMR_BUILD_PLATFORM "zephyr")
 set(WAMR_BUILD_TARGET ${TARGET_ISA})
 set(WAMR_BUILD_INTERP 1)
+set(WAMR_BUILD_FAST_INTERP 1)
 if (CONFIG_OCRE_WAMR_AOT)
     set(WAMR_BUILD_AOT 1)
 else()
@@ -81,6 +82,12 @@ include (${WAMR_ROOT_DIR}/build-scripts/runtime_lib.cmake)
 add_library(vmlib)
 target_sources(vmlib PRIVATE
     ${WAMR_RUNTIME_LIB_SOURCE})
+
+# Ensure generated headers (e.g. heap_constants.h) are ready before compiling
+# the library. Zephyr adds this dependency for its own libraries automatically,
+# but parallel builds can race when the library is added via add_subdirectory.
+add_dependencies(vmlib zephyr_generated_headers)
+
 target_link_libraries(vmlib zephyr_interface LITTLEFS)
 
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
